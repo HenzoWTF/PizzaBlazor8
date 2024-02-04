@@ -1,7 +1,130 @@
 ﻿@page "/"
+@using PizzaBlazor8.Models
+@rendermode InteractiveServer
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Selecciona tu pizzas</h1>
 
-Welcome to your new app.
+@foreach (var pizza in State.Menu.Pizzas)
+{
+    <div class="row">
+        <div class="col">
+            @pizza.Name
+        </div>
+        <div class="col text-right">
+            @($"{pizza.Price:0.00}")
+        </div>
+        <div class="col"></div>
+        <div class="col">
+            <img src="@SpicinessImage(pizza.Spiciness)"
+                 alt="@pizza.Spiciness" />
+        </div>
+        <div class="col">
+            <button class="btn btn-success pl-4 pr-4"
+                    @onclick="@(() => AddToBasket(pizza))">
+                Add
+            </button>
+        </div>
+    </div>
+}
+
+
+<!-- End menu -->
+ <!-- Shopping Basket -->
+ @if (State.Basket.Order.Any())
+ {
+    <h1 class="">Your current order</h1>
+     @foreach (var (pizza, pos) in State.Basket.Order.Select((id, pos) => (State.Menu.GetPizza(id), pos)))
+     {
+         <div class="row mb-2">
+             <div class="col"> 
+                 @pizza.Name
+             </div>
+             <div class="col text-right">
+                @($"{pizza.Price:0.00}")
+             </div>
+             <div class="col"></div>
+             <div class="col"></div>
+             <div class="col">
+                 <button class="btn btn-danger" @onclick="@(() => RemoveFromBasket(pos))">Remove</button>
+             </div>
+         </div>
+     }
+     <div class="row">
+         <div class="col"></div>
+         <div class="col"><hr /></div>
+         <div class="col"> </div>
+         <div class="col"> </div>
+     </div>
+
+     <div class="row">
+         <div class="col"> Total:</div>
+         <div class="col text-right font-weight-bold"> 
+             @($"{State.TotalPrice:0.00}") 
+         </div>
+         <div class="col"> </div>
+         <div class="col"> </div>
+         <div class="col"> </div>
+     </div>
+ }
+ <!-- End shopping basket -->
+
+  <!-- Customer entry -->
+ <h1>Please enter your details below</h1>
+
+ <EditForm Model="@State.Basket.Customer" OnValidSubmit="PlaceOrder">
+     <DataAnnotationsValidator/> 
+    <fieldset>
+        <div class="row mb-2">
+            <label class="col-2" for="name">Name:</label>
+            <InputText class="col-6" id="name" @bind-Value="State.Basket.Customer.Name" />
+            <ValidationMessage For="@(() => State.Basket.Customer.Name)" />
+        </div>
+
+        <div class="row mb-2">
+            <label class="col-2" for="street">Street:</label>
+            <InputText class="col-6" id="street" @bind-Value="State.Basket.Customer.Street" />
+            <ValidationMessage For="@(() => State.Basket.Customer.Street)" />
+        </div>
+
+        <div class="row mb-2">
+            <label class="col-2" for="city">City:</label>
+            <InputText class="col-6" id="city" @bind-Value="State.Basket.Customer.City" />
+            <ValidationMessage For="@(() => State.Basket.Customer.City)" />
+        </div>
+        <button @onclick="PlaceOrder">Checkout</button>
+
+     </fieldset>
+
+
+ </EditForm>
+<!-- End customer entry -->
+
+
+
+
+
+
+
+@code {
+    private State State { get; set; } = new State();
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Menu.AddPizza(new Pizza(1, "Pepperoni", 8.99M, Spiciness.Spicy));
+        State.Menu.AddPizza(new Pizza(2, "Margherita", 7.99M, Spiciness.none));
+        State.Menu.AddPizza(new Pizza(3, "Diabolo", 9.99M, Spiciness.Hot));
+    }
+
+    private string SpicinessImage(Spiciness spiciness) => $"images/{spiciness.ToString().ToLower()}.jpg";
+    private void AddToBasket(Pizza pizza) => State.Basket.AddPizza(pizza.Id);
+
+    private void RemoveFromBasket(int pos) => State.Basket.RemoveAt(pos);
+
+    private void PlaceOrder()
+    {
+        Console.WriteLine("Placing order");
+    }
+
+}
